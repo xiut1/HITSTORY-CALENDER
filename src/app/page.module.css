@@ -338,6 +338,16 @@
   letter-spacing: -0.2px;
 }
 
+.badgeCountry {
+  font-size: 11px;
+  font-weight: 700;
+  color: #6b7684;
+  background-color: #f2f4f6;
+  padding: 3px 8px;
+  border-radius: 4px;
+  letter-spacing: -0.2px;
+}
+
 .cardYear {
   font-size: 12px;
   font-weight: 500;
@@ -346,36 +356,22 @@
 }
 
 .cardTitle {
-  margin: 0 0 6px;
+  margin: 0;
   font-size: 15px;
   font-weight: 600;
   color: #191f28;
   line-height: 1.45;
   letter-spacing: -0.3px;
+  word-break: keep-all;
 }
 
 .cardDesc {
-  margin: 0;
+  margin: 6px 0 0;
   font-size: 14px;
   color: #6b7684;
   line-height: 1.65;
   letter-spacing: -0.2px;
-}
-
-.cardFooter {
-  display: flex;
-  align-items: center;
-  margin-top: 12px;
-}
-
-.cardEra {
-  font-size: 11px;
-  font-weight: 600;
-  color: #8b95a1;
-  background-color: #f2f4f6;
-  padding: 3px 8px;
-  border-radius: 4px;
-  letter-spacing: -0.2px;
+  word-break: keep-all;
 }
 
 @media (max-width: 480px) {

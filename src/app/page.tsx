@@ -2,13 +2,12 @@
 
 import styles from "./page.module.css";
 import { useMemo, useState } from "react";
-import { historyEvents, type Era } from "@/lib/historyEvents";
+import { historyEvents } from "@/lib/historyEvents";
 
 const dayNames = ["일", "월", "화", "수", "목", "금", "토"];
 
 export default function Home() {
   const [selectedCountry, setSelectedCountry] = useState("전체");
-  const [selectedRange, setSelectedRange] = useState("전체 시대");
 
   const today = new Date();
   const todayMonth = String(today.getMonth() + 1).padStart(2, "0");
@@ -19,7 +18,6 @@ export default function Home() {
 
   const handleReset = () => {
     setSelectedCountry("전체");
-    setSelectedRange("전체 시대");
     setSelectedMonth(todayMonth);
     setSelectedDate(`${todayMonth}-${todayDate}`);
   };
@@ -38,18 +36,8 @@ export default function Home() {
   }, []);
 
   const scopedEvents = useMemo(() => {
-    return historyEvents
-      .filter((event) => (selectedCountry === "전체" ? true : event.country === selectedCountry))
-      .filter((event) => {
-        if (selectedRange === "전체 시대") {
-          return true;
-        }
-        if (selectedRange === "근현대" || selectedRange === "근현대 ~ 현재") {
-          return event.era === "근현대" || event.era === "현대";
-        }
-        return event.era === (selectedRange as Era);
-      });
-  }, [selectedCountry, selectedRange]);
+    return historyEvents.filter((event) => (selectedCountry === "전체" ? true : event.country === selectedCountry));
+  }, [selectedCountry]);
 
   const eventsByDate = useMemo(() => {
     return scopedEvents.reduce<Record<string, typeof scopedEvents>>((acc, event) => {
@@ -110,19 +98,6 @@ export default function Home() {
               ))}
             </select>
           </div>
-
-          <div className={styles.selectWrapper}>
-            <label htmlFor="range-select">기간</label>
-            <select id="range-select" value={selectedRange} onChange={(e) => setSelectedRange(e.target.value)}>
-              <option value="전체 시대">전체 시대</option>
-              <option value="근현대 ~ 현재">근현대 ~ 현재</option>
-              <option value="고대">고대</option>
-              <option value="중세">중세</option>
-              <option value="근대">근대</option>
-              <option value="근현대">근현대</option>
-              <option value="현대">현대</option>
-            </select>
-          </div>
         </section>
 
         <section className={styles.calendarSection}>
@@ -161,15 +136,8 @@ export default function Home() {
               const isSunday = index % 7 === 0;
 
               return (
-                <button
-                  key={dayKey}
-                  type="button"
-                  className={`${styles.dayButton} ${isSelected ? styles.selected : ""}`}
-                  onClick={() => setSelectedDate(dayKey)}
-                >
-                  <span className={`${styles.dayNumber} ${holidayCount > 0 || isSunday ? styles.holidayText : ""}`}>
-                    {day}
-                  </span>
+                <button key={dayKey} type="button" className={`${styles.dayButton} ${isSelected ? styles.selected : ""}`} onClick={() => setSelectedDate(dayKey)}>
+                  <span className={`${styles.dayNumber} ${holidayCount > 0 || isSunday ? styles.holidayText : ""}`}>{day}</span>
                   <div className={styles.dotContainer}>
                     {historyCount > 0 && <span className={styles.dotHistory} />}
                     {holidayCount > 0 && <span className={styles.dotHoliday} />}
@@ -183,9 +151,7 @@ export default function Home() {
         <section className={styles.results}>
           <h2 className={styles.resultTitle}>
             {Number(selectedMonth)}월 {Number(selectedDate.split("-")[1])}일의 역사
-            <span style={{ color: "#b0b8c1", fontWeight: 500, fontSize: 14, marginLeft: 6 }}>
-              {filteredEvents.length}건
-            </span>
+            <span style={{ color: "#b0b8c1", fontWeight: 500, fontSize: 14, marginLeft: 6 }}>{filteredEvents.length}건</span>
           </h2>
           {filteredEvents.length === 0 ? (
             <div className={styles.emptyState}>
@@ -198,38 +164,22 @@ export default function Home() {
                   {eventItem.url ? (
                     <a href={eventItem.url} target="_blank" rel="noopener noreferrer" className={styles.cardLink}>
                       <div className={styles.cardHeader}>
-                        {eventItem.category === "holiday" ? (
-                          <span className={styles.badgeHoliday}>공휴일</span>
-                        ) : (
-                          <span className={styles.badgeHistory}>역사</span>
-                        )}
+                        {eventItem.category === "holiday" ? <span className={styles.badgeHoliday}>공휴일</span> : <span className={styles.badgeHistory}>역사</span>}
+                        <span className={styles.badgeCountry}>{eventItem.country}</span>
                         <span className={styles.cardYear}>{eventItem.year}년</span>
                       </div>
-                      <h3 className={styles.cardTitle}>
-                        [{eventItem.country}] {eventItem.title}
-                      </h3>
-                      <p className={styles.cardDesc}>{eventItem.description}</p>
-                      <div className={styles.cardFooter}>
-                        <span className={styles.cardEra}>{eventItem.era}</span>
-                      </div>
+                      <h3 className={styles.cardTitle}>{eventItem.title}</h3>
+                      {eventItem.title !== eventItem.description && <p className={styles.cardDesc}>{eventItem.description}</p>}
                     </a>
                   ) : (
                     <div className={styles.cardContent}>
                       <div className={styles.cardHeader}>
-                        {eventItem.category === "holiday" ? (
-                          <span className={styles.badgeHoliday}>공휴일</span>
-                        ) : (
-                          <span className={styles.badgeHistory}>역사</span>
-                        )}
+                        {eventItem.category === "holiday" ? <span className={styles.badgeHoliday}>공휴일</span> : <span className={styles.badgeHistory}>역사</span>}
+                        <span className={styles.badgeCountry}>{eventItem.country}</span>
                         <span className={styles.cardYear}>{eventItem.year}년</span>
                       </div>
-                      <h3 className={styles.cardTitle}>
-                        [{eventItem.country}] {eventItem.title}
-                      </h3>
-                      <p className={styles.cardDesc}>{eventItem.description}</p>
-                      <div className={styles.cardFooter}>
-                        <span className={styles.cardEra}>{eventItem.era}</span>
-                      </div>
+                      <h3 className={styles.cardTitle}>{eventItem.title}</h3>
+                      {eventItem.title !== eventItem.description && <p className={styles.cardDesc}>{eventItem.description}</p>}
                     </div>
                   )}
                 </li>

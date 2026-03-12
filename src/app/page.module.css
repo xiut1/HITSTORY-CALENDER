@@ -6,6 +6,7 @@
 .main {
   max-width: 480px;
   margin: 0 auto;
+  padding: 0 15px;
   padding-bottom: 120px;
 }
 
@@ -261,7 +262,7 @@
   font-size: 17px;
   font-weight: 700;
   color: #191f28;
-  margin: 0 0 14px 4px;
+  margin: 0 15px 14px;
   letter-spacing: -0.3px;
 }
 
@@ -304,7 +305,7 @@
   text-decoration: none;
   color: inherit;
   display: block;
-  padding: 20px;
+  padding: 18px;
 }
 
 .cardContent {

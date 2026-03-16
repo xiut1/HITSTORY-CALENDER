@@ -6,8 +6,7 @@
 .main {
   max-width: 480px;
   margin: 0 auto;
-  padding: 0 15px;
-  padding-bottom: 120px;
+  padding: 0 0 70px;
 }
 
 .header {
@@ -255,7 +254,7 @@
 }
 
 .results {
-  padding: 24px 0 0;
+  padding: 24px 10px 0;
 }
 
 .resultTitle {

@@ -152,8 +152,8 @@ def classify_subcategory(text: str) -> str | None:
     return None
 
 
-def guess_country(text: str) -> str:
-    """텍스트에서 국가 추측 — 더 긴 키워드를 우선 매칭"""
+def guess_country(text: str) -> str | list[str]:
+    """텍스트에서 국가 추측 — 복수 국가 발견 시 리스트 반환"""
     found = []
     for keyword, country in COUNTRY_MAP.items():
         idx = text.find(keyword)
@@ -163,7 +163,16 @@ def guess_country(text: str) -> str:
         return "세계"
     # 더 긴 키워드를 우선, 같으면 더 앞에 나온 것 우선
     found.sort(key=lambda x: (-x[1], x[0]))
-    return found[0][2]
+    # 중복 제거하며 순서 유지
+    seen = set()
+    unique = []
+    for _, _, country in found:
+        if country not in seen:
+            seen.add(country)
+            unique.append(country)
+    if len(unique) == 1:
+        return unique[0]
+    return unique
 
 
 def make_id(month: int, day: int, year: int, suffix: str = "") -> str:
@@ -370,7 +379,12 @@ def format_ts(events: list[dict], month: int) -> str:
         desc = e["description"].replace('"', '\\"')
         lines.append("  {")
         lines.append(f'    id: "{e["id"]}",')
-        lines.append(f'    country: "{e["country"]}",')
+        country = e["country"]
+        if isinstance(country, list):
+            items = ", ".join(f'"{c}"' for c in country)
+            lines.append(f'    country: [{items}],')
+        else:
+            lines.append(f'    country: "{country}",')
         lines.append(f'    date: "{e["date"]}",')
         lines.append(f'    year: {e["year"]},')
         lines.append(f'    title: "{title}",')

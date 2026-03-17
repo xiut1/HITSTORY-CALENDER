@@ -1,10 +1,19 @@
 "use client";
 
 import styles from "./page.module.css";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { historyEvents } from "@/lib/historyEvents";
 
 const dayNames = ["일", "월", "화", "수", "목", "금", "토"];
+
+function getCountries(country: string | string[]): string[] {
+  return Array.isArray(country) ? country : [country];
+}
+
+function matchesCountry(country: string | string[], selected: string): boolean {
+  if (selected === "전체") return true;
+  return getCountries(country).includes(selected);
+}
 
 export default function Home() {
   const [selectedCountry, setSelectedCountry] = useState("전체");
@@ -32,11 +41,33 @@ export default function Home() {
   };
 
   const countries = useMemo(() => {
-    return ["전체", ...new Set(historyEvents.map((event) => event.country))];
+    const all = historyEvents.flatMap((event) => getCountries(event.country));
+    const unique = [...new Set(all)].sort((a, b) => a.localeCompare(b, "ko"));
+    return ["전체", ...unique];
+  }, []);
+
+  const [countrySearch, setCountrySearch] = useState("");
+  const [countryOpen, setCountryOpen] = useState(false);
+  const comboRef = useRef<HTMLDivElement>(null);
+
+  const filteredCountries = useMemo(() => {
+    if (!countrySearch) return countries;
+    return countries.filter((c) => c.includes(countrySearch));
+  }, [countries, countrySearch]);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (comboRef.current && !comboRef.current.contains(e.target as Node)) {
+        setCountryOpen(false);
+        setCountrySearch("");
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const scopedEvents = useMemo(() => {
-    return historyEvents.filter((event) => (selectedCountry === "전체" ? true : event.country === selectedCountry));
+    return historyEvents.filter((event) => matchesCountry(event.country, selectedCountry));
   }, [selectedCountry]);
 
   const eventsByDate = useMemo(() => {
@@ -88,15 +119,53 @@ export default function Home() {
         </section>
 
         <section className={styles.filters}>
-          <div className={styles.selectWrapper}>
-            <label htmlFor="country-select">국가</label>
-            <select id="country-select" value={selectedCountry} onChange={(e) => setSelectedCountry(e.target.value)}>
-              {countries.map((country) => (
-                <option key={country} value={country}>
-                  {country}
-                </option>
-              ))}
-            </select>
+          <div className={styles.comboWrapper} ref={comboRef}>
+            <button
+              type="button"
+              className={styles.comboButton}
+              onClick={() => {
+                setCountryOpen(!countryOpen);
+                setCountrySearch("");
+              }}
+            >
+              {selectedCountry}
+              <svg width="10" height="6" viewBox="0 0 10 6" fill="none">
+                <path d="M0 0l5 6 5-6z" fill="#8b95a1" />
+              </svg>
+            </button>
+            {countryOpen && (
+              <div className={styles.comboDropdown}>
+                <input
+                  type="text"
+                  className={styles.comboSearch}
+                  placeholder="국가 검색..."
+                  value={countrySearch}
+                  onChange={(e) => setCountrySearch(e.target.value)}
+                  autoFocus
+                />
+                <ul className={styles.comboList}>
+                  {filteredCountries.length === 0 ? (
+                    <li className={styles.comboEmpty}>결과 없음</li>
+                  ) : (
+                    filteredCountries.map((country) => (
+                      <li key={country}>
+                        <button
+                          type="button"
+                          className={`${styles.comboOption} ${selectedCountry === country ? styles.comboOptionActive : ""}`}
+                          onClick={() => {
+                            setSelectedCountry(country);
+                            setCountryOpen(false);
+                            setCountrySearch("");
+                          }}
+                        >
+                          {country}
+                        </button>
+                      </li>
+                    ))
+                  )}
+                </ul>
+              </div>
+            )}
           </div>
         </section>
 
@@ -165,7 +234,9 @@ export default function Home() {
                     <a href={eventItem.url} target="_blank" rel="noopener noreferrer" className={styles.cardLink}>
                       <div className={styles.cardHeader}>
                         {eventItem.category === "holiday" ? <span className={styles.badgeHoliday}>공휴일</span> : <span className={styles.badgeHistory}>역사</span>}
-                        <span className={styles.badgeCountry}>{eventItem.country}</span>
+                        {getCountries(eventItem.country).map((c) => (
+                          <span key={c} className={styles.badgeCountry}>{c}</span>
+                        ))}
                         <span className={styles.cardYear}>{eventItem.year}년</span>
                       </div>
                       <h3 className={styles.cardTitle}>{eventItem.title}</h3>
@@ -175,7 +246,9 @@ export default function Home() {
                     <div className={styles.cardContent}>
                       <div className={styles.cardHeader}>
                         {eventItem.category === "holiday" ? <span className={styles.badgeHoliday}>공휴일</span> : <span className={styles.badgeHistory}>역사</span>}
-                        <span className={styles.badgeCountry}>{eventItem.country}</span>
+                        {getCountries(eventItem.country).map((c) => (
+                          <span key={c} className={styles.badgeCountry}>{c}</span>
+                        ))}
                         <span className={styles.cardYear}>{eventItem.year}년</span>
                       </div>
                       <h3 className={styles.cardTitle}>{eventItem.title}</h3>

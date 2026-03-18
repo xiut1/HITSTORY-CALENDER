@@ -260,6 +260,15 @@ def parse_holidays(header_html: str, header_text: str, month: int, day: int) -> 
     return holidays
 
 
+def normalize_wiki_url(href: str) -> str:
+    """상대/프로토콜 상대 경로를 절대 URL로 변환"""
+    if href.startswith("//"):
+        return "https:" + href
+    if href.startswith("/"):
+        return "https://ko.wikipedia.org" + href
+    return href
+
+
 def extract_holiday_url(header_html: str, keyword: str) -> str | None:
     """헤더 HTML에서 키워드와 관련된 <b><a> 볼드 링크 URL 추출"""
     pattern = re.compile(
@@ -268,11 +277,7 @@ def extract_holiday_url(header_html: str, keyword: str) -> str | None:
     )
     match = pattern.search(header_html)
     if match:
-        href = match.group(1)
-        if href.startswith("//"):
-            return "https:" + href
-        elif href.startswith("/"):
-            return "https://ko.wikipedia.org" + href
+        return normalize_wiki_url(match.group(1))
     return None
 
 
@@ -284,15 +289,83 @@ def fetch_wiki_page(month: int) -> str:
         return resp.read().decode("utf-8")
 
 
+def extract_bold_link_url(li_html: str) -> str | None:
+    """<li> HTML에서 <b><a> 볼드 링크 URL 추출"""
+    match = re.search(r'<b><a[^>]*href="([^"]*)"[^>]*>', li_html)
+    if match:
+        return normalize_wiki_url(match.group(1))
+    return None
+
+
+def parse_year_and_desc(text: str) -> tuple[int, str] | None:
+    """'기원전 XXX년 - ...' 또는 'XXX년 - ...' 형식에서 연도와 설명 추출"""
+    bc_match = re.match(r"기원전\s*(\d+)년\s*-\s*(.+)", text)
+    if bc_match:
+        return -int(bc_match.group(1)), bc_match.group(2).strip()
+
+    year_match = re.match(r"(\d+)년\s*-\s*(.+)", text)
+    if year_match:
+        return int(year_match.group(1)), year_match.group(2).strip()
+
+    return None
+
+
+def parse_history_items(
+    section: str, month: int, day: int, seen_ids: set[str]
+) -> list[dict]:
+    """날짜 섹션의 <ul> 안 <li> 항목들을 역사 이벤트로 파싱"""
+    ul_match = re.search(r"<ul[^>]*>(.*?)</ul>", section, re.DOTALL)
+    if not ul_match:
+        return []
+
+    events = []
+    date_str = f"{str(month).zfill(2)}-{str(day).zfill(2)}"
+    li_items = re.findall(r"<li>(.*?)</li>", ul_match.group(1), re.DOTALL)
+
+    for li_idx, li in enumerate(li_items):
+        url = extract_bold_link_url(li)
+
+        text = strip_html(li).strip()
+        text = re.sub(r"\(그림\)|\(사진\)", "", text).strip()
+
+        parsed = parse_year_and_desc(text)
+        if not parsed:
+            continue
+        year, desc = parsed
+
+        event_id = make_id(month, day, year)
+        if event_id in seen_ids:
+            event_id = make_id(month, day, year, suffix=f"-{li_idx}")
+        seen_ids.add(event_id)
+
+        event = {
+            "id": event_id,
+            "country": guess_country(desc),
+            "date": date_str,
+            "year": year,
+            "title": desc,
+            "description": desc,
+            "category": "history",
+        }
+        subcategory = classify_subcategory(desc)
+        if subcategory:
+            event["subcategory"] = subcategory
+        if url:
+            event["url"] = url
+
+        events.append(event)
+
+    return events
+
+
 def parse_events(html: str, month: int) -> list[dict]:
     """HTML에서 직접 날짜 섹션과 이벤트를 파싱"""
     events = []
-    seen_ids = set()
+    seen_ids: set[str] = set()
 
     date_pattern = re.compile(
         rf'<b><a[^>]*>({month}월\s*(\d+)일)</a></b>'
     )
-
     matches = list(date_pattern.finditer(html))
 
     for i, m in enumerate(matches):
@@ -301,7 +374,7 @@ def parse_events(html: str, month: int) -> list[dict]:
         end_pos = matches[i + 1].start() if i + 1 < len(matches) else start_pos + 5000
         section = html[start_pos:end_pos]
 
-        # --- 기념일 파싱 ---
+        # 기념일 파싱
         ul_start = section.find("<ul")
         if ul_start > 0:
             header_html = section[:ul_start]
@@ -309,65 +382,8 @@ def parse_events(html: str, month: int) -> list[dict]:
             if header_text:
                 events.extend(parse_holidays(header_html, header_text, month, day))
 
-        # --- 역사 이벤트 파싱 ---
-        ul_match = re.search(r"<ul[^>]*>(.*?)</ul>", section, re.DOTALL)
-        if not ul_match:
-            continue
-
-        li_items = re.findall(r"<li>(.*?)</li>", ul_match.group(1), re.DOTALL)
-
-        for li_idx, li in enumerate(li_items):
-            # URL 추출
-            bold_link = re.search(r'<b><a[^>]*href="([^"]*)"[^>]*>', li)
-            url = None
-            if bold_link:
-                href = bold_link.group(1)
-                if href.startswith("//"):
-                    url = "https:" + href
-                elif href.startswith("/"):
-                    url = "https://ko.wikipedia.org" + href
-
-            text = strip_html(li).strip()
-            text = re.sub(r"\(그림\)|\(사진\)", "", text).strip()
-
-            bc_match = re.match(r"기원전\s*(\d+)년\s*-\s*(.+)", text)
-            year_match = re.match(r"(\d+)년\s*-\s*(.+)", text)
-
-            if bc_match:
-                year = -int(bc_match.group(1))
-                desc = bc_match.group(2).strip()
-            elif year_match:
-                year = int(year_match.group(1))
-                desc = year_match.group(2).strip()
-            else:
-                continue
-
-            title = desc
-            country = guess_country(desc)
-            subcategory = classify_subcategory(desc)
-            date_str = f"{str(month).zfill(2)}-{str(day).zfill(2)}"
-
-            # 같은 날 같은 연도 중복 방지
-            event_id = make_id(month, day, year)
-            if event_id in seen_ids:
-                event_id = make_id(month, day, year, suffix=f"-{li_idx}")
-            seen_ids.add(event_id)
-
-            event = {
-                "id": event_id,
-                "country": country,
-                "date": date_str,
-                "year": year,
-                "title": title,
-                "description": desc,
-                "category": "history",
-            }
-            if subcategory:
-                event["subcategory"] = subcategory
-            if url:
-                event["url"] = url
-
-            events.append(event)
+        # 역사 이벤트 파싱
+        events.extend(parse_history_items(section, month, day, seen_ids))
 
     return events
 
@@ -399,6 +415,74 @@ def format_ts(events: list[dict], month: int) -> str:
     return "\n".join(lines)
 
 
+def print_stats(events: list[dict]) -> None:
+    """크롤링 결과 통계 출력"""
+    history_count = sum(1 for e in events if e["category"] == "history")
+    holiday_count = sum(1 for e in events if e["category"] == "holiday")
+    print(f"  역사: {history_count}건, 공휴일: {holiday_count}건 (총 {len(events)}건)")
+
+    country_counts: dict[str, int] = {}
+    for e in events:
+        c = e["country"]
+        country_counts[c] = country_counts.get(c, 0) + 1
+    top_countries = sorted(country_counts.items(), key=lambda x: -x[1])[:5]
+    print(f"  국가 TOP5: {', '.join(f'{k}: {v}' for k, v in top_countries)}")
+
+
+def remove_existing_month_data(content: str, month: int) -> str:
+    """TS 파일 내용에서 기존 월별 위키 데이터 블록 제거"""
+    marker = f"  // --- 위키백과 오늘의 역사: {month}월 ---"
+    if marker not in content:
+        return content
+
+    start_idx = content.index(marker)
+    rest = content[start_idx + len(marker):]
+    next_match = re.search(r"  // --- 위키백과 오늘의 역사: \d+월 ---", rest)
+    bracket_pos = rest.find("];")
+
+    if next_match and next_match.start() < bracket_pos:
+        end_idx = start_idx + len(marker) + next_match.start()
+    else:
+        end_idx = start_idx + len(marker) + bracket_pos
+
+    print(f"  기존 {month}월 위키 데이터를 교체합니다.")
+    return content[:start_idx] + content[end_idx:]
+
+
+def update_ts_file(ts_data: str, month: int, event_count: int) -> None:
+    """historyEvents.ts 파일에 월별 데이터 삽입/교체"""
+    ts_path = os.path.normpath(TS_FILE)
+    if not os.path.exists(ts_path):
+        print(f"오류: {ts_path} 파일을 찾을 수 없습니다.")
+        print("stdout으로 출력합니다:\n")
+        print(ts_data)
+        return
+
+    with open(ts_path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    content = remove_existing_month_data(content, month)
+
+    bracket_idx = content.rfind("];")
+    new_content = content[:bracket_idx] + ts_data + "\n" + content[bracket_idx:]
+
+    with open(ts_path, "w", encoding="utf-8") as f:
+        f.write(new_content)
+
+    print(f"  → {ts_path} 에 {event_count}건 삽입 완료")
+
+
+def parse_months_arg(arg: str) -> list[int]:
+    """CLI 인자를 월 리스트로 변환"""
+    if arg.lower() == "all":
+        return list(range(1, 13))
+    month = int(arg)
+    if not 1 <= month <= 12:
+        print("월은 1-12 사이여야 합니다.")
+        sys.exit(1)
+    return [month]
+
+
 def main():
     if len(sys.argv) < 2:
         print("사용법: python3 crawl_wiki_history.py <월(1-12) | all>")
@@ -406,15 +490,7 @@ def main():
         print("      python3 crawl_wiki_history.py all")
         sys.exit(1)
 
-    arg = sys.argv[1]
-    if arg.lower() == "all":
-        months = list(range(1, 13))
-    else:
-        months = [int(arg)]
-        if not 1 <= months[0] <= 12:
-            print("월은 1-12 사이여야 합니다.")
-            sys.exit(1)
-
+    months = parse_months_arg(sys.argv[1])
     total_count = 0
 
     for month in months:
@@ -423,58 +499,10 @@ def main():
 
         html = fetch_wiki_page(month)
         events = parse_events(html, month)
+        print_stats(events)
 
-        history_count = sum(1 for e in events if e["category"] == "history")
-        holiday_count = sum(1 for e in events if e["category"] == "holiday")
-        print(f"  역사: {history_count}건, 공휴일: {holiday_count}건 (총 {len(events)}건)")
-
-        # 국가별 상위 5개
-        country_counts: dict[str, int] = {}
-        for e in events:
-            c = e["country"]
-            country_counts[c] = country_counts.get(c, 0) + 1
-        top_countries = sorted(country_counts.items(), key=lambda x: -x[1])[:5]
-        country_str = ", ".join(f"{k}: {v}" for k, v in top_countries)
-        print(f"  국가 TOP5: {country_str}")
-
-        ts_data = format_ts(events, month)
+        update_ts_file(format_ts(events, month), month, len(events))
         total_count += len(events)
-
-        # historyEvents.ts 파일에 자동 삽입
-        ts_path = os.path.normpath(TS_FILE)
-        if not os.path.exists(ts_path):
-            print(f"오류: {ts_path} 파일을 찾을 수 없습니다.")
-            print("stdout으로 출력합니다:\n")
-            print(ts_data)
-            continue
-
-        with open(ts_path, "r", encoding="utf-8") as f:
-            content = f.read()
-
-        # 기존 같은 월 위키 데이터가 있으면 제거
-        marker = f"  // --- 위키백과 오늘의 역사: {month}월 ---"
-        if marker in content:
-            start_idx = content.index(marker)
-            rest = content[start_idx + len(marker):]
-            next_match = re.search(r"  // --- 위키백과 오늘의 역사: \d+월 ---", rest)
-            bracket_pos = rest.find("];")
-
-            if next_match and next_match.start() < bracket_pos:
-                end_idx = start_idx + len(marker) + next_match.start()
-            else:
-                end_idx = start_idx + len(marker) + bracket_pos
-
-            content = content[:start_idx] + content[end_idx:]
-            print(f"  기존 {month}월 위키 데이터를 교체합니다.")
-
-        # ]; 바로 앞에 삽입
-        bracket_idx = content.rfind("];")
-        new_content = content[:bracket_idx] + ts_data + "\n" + content[bracket_idx:]
-
-        with open(ts_path, "w", encoding="utf-8") as f:
-            f.write(new_content)
-
-        print(f"  → {ts_path} 에 {len(events)}건 삽입 완료")
 
     print(f"\n{'='*40}")
     print(f"전체 완료! 총 {total_count}건 처리됨")

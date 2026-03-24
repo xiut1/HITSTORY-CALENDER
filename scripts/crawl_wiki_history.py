@@ -116,6 +116,50 @@ COUNTRY_MAP = {
     # 오세아니아
     "호주": "호주", "오스트레일리아": "호주",
     "뉴질랜드": "뉴질랜드",
+    "피지": "피지", "팔라우": "팔라우", "투발루": "투발루",
+    "바누아투": "바누아투", "사모아": "사모아", "나우루": "나우루",
+    "파푸아뉴기니": "파푸아뉴기니",
+    # 추가 아시아
+    "홍콩": "홍콩", "조선민주주의인민공화국": "북한", "북한": "북한",
+    "튀르키예": "터키", "키르기스스탄": "키르기스스탄",
+    "타지키스탄": "타지키스탄", "카자흐스탄": "카자흐스탄",
+    "아제르바이잔": "아제르바이잔", "아르메니아": "아르메니아",
+    "키프로스": "키프로스", "부탄": "부탄",
+    # 추가 유럽
+    "슬로바키아": "슬로바키아", "알바니아": "알바니아",
+    "북마케도니아": "북마케도니아", "몰도바": "몰도바",
+    "라트비아": "라트비아", "리투아니아": "리투아니아",
+    "에스토니아": "에스토니아", "아이슬란드": "아이슬란드",
+    "보스니아": "보스니아", "슬로베니아": "슬로베니아",
+    # 추가 아프리카
+    "남아프리카공화국": "남아프리카공화국",
+    "르완다": "르완다", "우간다": "우간다", "앙골라": "앙골라",
+    "모잠비크": "모잠비크", "마다가스카르": "마다가스카르",
+    "말리": "말리", "니제르": "니제르", "차드": "차드",
+    "기니": "기니", "기니비사우": "기니비사우",
+    "부르키나파소": "부르키나파소", "코트디부아르": "코트디부아르",
+    "라이베리아": "라이베리아", "시에라리온": "시에라리온",
+    "토고": "토고", "에리트레아": "에리트레아", "가봉": "가봉",
+    "보츠와나": "보츠와나", "레소토": "레소토",
+    "에스와티니": "에스와티니", "나미비아": "나미비아",
+    "모리셔스": "모리셔스", "적도 기니": "적도 기니",
+    "중앙아프리카 공화국": "중앙아프리카 공화국",
+    "콩고 민주 공화국": "콩고 민주 공화국",
+    # 추가 아메리카
+    "에콰도르": "에콰도르", "우루과이": "우루과이",
+    "파라과이": "파라과이", "볼리비아": "볼리비아",
+    "코스타리카": "코스타리카", "수리남": "수리남",
+    "가이아나": "가이아나", "아이티": "아이티",
+    "바하마": "바하마", "바베이도스": "바베이도스",
+    "자메이카": "자메이카", "그레나다": "그레나다",
+    "세인트루시아": "세인트루시아", "도미니카 공화국": "도미니카 공화국",
+    "도미니카 연방": "도미니카 연방", "엘살바도르": "엘살바도르",
+    "세인트키츠 네비스": "세인트키츠 네비스",
+    "앤티가 바부다": "앤티가 바부다",
+    "트리니다드 토바고": "트리니다드 토바고",
+    "조지아": "조지아", "모리타니": "모리타니",
+    "브루나이": "브루나이",
+    "미크로네시아 연방": "미크로네시아 연방",
     # 국제기구 / 기타
     "유엔": "세계", "UN": "세계", "국제연합": "세계",
     "NATO": "세계", "나토": "세계",
@@ -185,17 +229,24 @@ def make_id(month: int, day: int, year: int, suffix: str = "") -> str:
     return base + suffix
 
 
+def is_known_country(name: str) -> bool:
+    """COUNTRY_MAP에 등록된 국가명인지 확인"""
+    name = name.strip()
+    return name in COUNTRY_MAP or name in COUNTRY_MAP.values()
+
+
+def split_country_names(text: str) -> list[str]:
+    """'·', '와', '과'로 구분된 국가명을 분리"""
+    return [n.strip() for n in re.split(r"[·]|와\s|과\s", text) if n.strip()]
+
+
 def is_country_name(text: str) -> bool:
     """텍스트가 나라 이름(들)인지 판별"""
-    names = re.split(r"[·]", text)
+    names = split_country_names(text)
+    if not names:
+        return False
     for name in names:
-        name = name.strip()
-        if not name:
-            continue
-        if len(name) > 15:
-            return False
-        non_country = ["천주", "서방", "동방", "국제", "세계", "가톨릭", "정교회", "기독교"]
-        if any(nc in name for nc in non_country):
+        if not is_known_country(name):
             return False
     return True
 
@@ -208,7 +259,7 @@ def parse_holidays(header_html: str, header_text: str, month: int, day: int) -> 
     parts = [p.strip() for p in header_text.split(",") if p.strip()]
 
     for idx, part in enumerate(parts):
-        country_match = re.match(r"(.+)의\s+(.+)", part)
+        country_match = re.match(r"(.+?)의\s+(.+)", part)
 
         is_country_pattern = False
         if country_match:
@@ -219,22 +270,23 @@ def parse_holidays(header_html: str, header_text: str, month: int, day: int) -> 
         if is_country_pattern:
             countries_str = country_match.group(1).strip()
             holiday_name = country_match.group(2).strip()
-            country_names = re.split(r"[·]", countries_str)
+            country_names = split_country_names(countries_str)
 
             for cn in country_names:
                 cn = cn.strip()
                 if not cn:
                     continue
-                hol_id = f"wiki-hol-{date_str}-{idx}-{cn}"
+                mapped = COUNTRY_MAP.get(cn, cn)
+                hol_id = f"wiki-hol-{date_str}-{idx}-{mapped}"
                 url = extract_holiday_url(header_html, holiday_name)
 
                 holiday = {
                     "id": hol_id,
-                    "country": cn,
+                    "country": mapped,
                     "date": date_str,
                     "year": 2024,
                     "title": holiday_name,
-                    "description": f"{cn}의 {holiday_name}.",
+                    "description": f"{mapped}의 {holiday_name}.",
                     "category": "holiday",
                 }
                 if url:
@@ -424,7 +476,9 @@ def print_stats(events: list[dict]) -> None:
     country_counts: dict[str, int] = {}
     for e in events:
         c = e["country"]
-        country_counts[c] = country_counts.get(c, 0) + 1
+        keys = c if isinstance(c, list) else [c]
+        for k in keys:
+            country_counts[k] = country_counts.get(k, 0) + 1
     top_countries = sorted(country_counts.items(), key=lambda x: -x[1])[:5]
     print(f"  국가 TOP5: {', '.join(f'{k}: {v}' for k, v in top_countries)}")
 

@@ -17,8 +17,10 @@ function matchesCountry(country: string | string[], selected: string): boolean {
 
 export default function Home() {
   const [selectedCountry, setSelectedCountry] = useState("전체");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const today = new Date();
+  const currentYear = today.getFullYear();
   const todayMonth = String(today.getMonth() + 1).padStart(2, "0");
   const todayDate = String(today.getDate()).padStart(2, "0");
 
@@ -27,13 +29,14 @@ export default function Home() {
 
   const handleReset = () => {
     setSelectedCountry("전체");
+    setSearchQuery("");
     setSelectedMonth(todayMonth);
     setSelectedDate(`${todayMonth}-${todayDate}`);
   };
 
   const handleMonthChange = (direction: "prev" | "next") => {
     const currentMonthIndex = Number(selectedMonth) - 1;
-    const newDate = new Date(2026, currentMonthIndex + (direction === "next" ? 1 : -1), 1);
+    const newDate = new Date(currentYear, currentMonthIndex + (direction === "next" ? 1 : -1), 1);
     const newMonth = String(newDate.getMonth() + 1).padStart(2, "0");
 
     setSelectedMonth(newMonth);
@@ -67,8 +70,15 @@ export default function Home() {
   }, []);
 
   const scopedEvents = useMemo(() => {
-    return historyEvents.filter((event) => matchesCountry(event.country, selectedCountry));
-  }, [selectedCountry]);
+    return historyEvents.filter((event) => {
+      if (!matchesCountry(event.country, selectedCountry)) return false;
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        return event.title.toLowerCase().includes(q) || event.description.toLowerCase().includes(q);
+      }
+      return true;
+    });
+  }, [selectedCountry, searchQuery]);
 
   const eventsByDate = useMemo(() => {
     return scopedEvents.reduce<Record<string, typeof scopedEvents>>((acc, event) => {
@@ -81,11 +91,10 @@ export default function Home() {
   }, [scopedEvents]);
 
   const monthData = useMemo(() => {
-    const year = 2026;
     const monthIndex = Number(selectedMonth) - 1;
-    const firstWeekday = new Date(year, monthIndex, 1).getDay();
+    const firstWeekday = new Date(currentYear, monthIndex, 1).getDay();
     const cells: Array<number | null> = [];
-    const lastDate = new Date(year, monthIndex + 1, 0).getDate();
+    const lastDate = new Date(currentYear, monthIndex + 1, 0).getDate();
 
     for (let i = 0; i < firstWeekday; i += 1) {
       cells.push(null);
@@ -119,6 +128,27 @@ export default function Home() {
         </section>
 
         <section className={styles.filters}>
+          <div className={styles.searchWrapper}>
+            <svg className={styles.searchIcon} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8b95a1" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8" />
+              <path d="M21 21l-4.35-4.35" />
+            </svg>
+            <input
+              type="text"
+              className={styles.searchInput}
+              placeholder="사건 검색..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            {searchQuery && (
+              <button type="button" className={styles.searchClear} onClick={() => setSearchQuery("")} aria-label="검색 초기화">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 6L6 18" />
+                  <path d="M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
           <div className={styles.comboWrapper} ref={comboRef}>
             <button
               type="button"
@@ -176,7 +206,7 @@ export default function Home() {
                 <path d="M15 18l-6-6 6-6" />
               </svg>
             </button>
-            <h2 className={styles.monthTitle}>{Number(selectedMonth)}월</h2>
+            <h2 className={styles.monthTitle}>{currentYear}년 {Number(selectedMonth)}월</h2>
             <button type="button" onClick={() => handleMonthChange("next")} className={styles.navButton} aria-label="다음 달">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M9 18l6-6-6-6" />

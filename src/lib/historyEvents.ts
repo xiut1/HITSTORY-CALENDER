@@ -139,7 +139,7 @@ export const historyEvents: HistoryEvent[] = [
   },
   {
     id: "wiki-0102-1788",
-    country: ["조지아", "미국"],
+    country: "미국",
     date: "01-02",
     year: 1788,
     title: "조지아주가 미국의 4번째 주가 되다.",
@@ -4987,7 +4987,7 @@ export const historyEvents: HistoryEvent[] = [
   },
   {
     id: "wiki-0324-1989",
-    country: "한국",
+    country: "미국",
     date: "03-24",
     year: 1989,
     title: "알래스카만의 프린스 윌리엄 해협에서 유조선 엑슨발데즈가 원유 24만 배럴을 유출하다.",

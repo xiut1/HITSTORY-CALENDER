@@ -3,7 +3,7 @@
 위키백과 '오늘의 역사' 크롤링 → historyEvents.ts 자동 삽입 스크립트
 
 사용법: python3 crawl_wiki_history.py <월(1-12)>
-        python3 crawl_wiki_history.py all          # 1~12월 전체
+        ~          # 1~12월 전체
 예시: python3 crawl_wiki_history.py 2
 """
 

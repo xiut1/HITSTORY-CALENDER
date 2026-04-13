@@ -193,12 +193,22 @@ export default function Home() {
     return cells;
   }, [selectedMonth, currentYear]);
 
-  // ─── 선택 날짜 이벤트 (카테고리 필터 적용 후 정렬) ───
+  const isSearchMode = searchQuery.trim().length > 0;
+
+  // ─── 이벤트 목록 ───
+  // 검색 중: 전체 날짜에서 매칭 결과 → 날짜순 정렬
+  // 일반: 선택 날짜 이벤트 → 연도순 정렬
   const filteredEvents = useMemo(() => {
+    if (isSearchMode) {
+      return [...categoryFilteredEvents].sort((a, b) => {
+        if (a.date !== b.date) return a.date.localeCompare(b.date);
+        return sortOrder === "asc" ? a.year - b.year : b.year - a.year;
+      });
+    }
     return categoryFilteredEvents
       .filter((event) => event.date === selectedDate)
       .sort((a, b) => sortOrder === "asc" ? a.year - b.year : b.year - a.year);
-  }, [categoryFilteredEvents, selectedDate, sortOrder]);
+  }, [categoryFilteredEvents, selectedDate, sortOrder, isSearchMode]);
 
   const selectedDay = Number(selectedDate.split("-")[1]);
 
@@ -401,7 +411,10 @@ export default function Home() {
         <section className={styles.results}>
           <div className={styles.resultHeader}>
             <h2 className={styles.resultTitle}>
-              {Number(selectedMonth)}월 {selectedDay}일의 역사
+              {isSearchMode
+                ? <><span className={styles.searchQueryLabel}>&ldquo;{searchQuery}&rdquo;</span> 검색 결과</>
+                : <>{Number(selectedMonth)}월 {selectedDay}일의 역사</>
+              }
             </h2>
             <div className={styles.resultMeta}>
               <span className={styles.resultCount}>{filteredEvents.length}건</span>
@@ -445,6 +458,7 @@ export default function Home() {
                           <span key={c} className={styles.badgeCountry}>{c}</span>
                         ))}
                         <span className={styles.cardYear}>{eventItem.year}년</span>
+                        {isSearchMode && <span className={styles.cardDate}>{Number(eventItem.date.split("-")[0])}월 {Number(eventItem.date.split("-")[1])}일</span>}
                       </div>
                       <h3 className={styles.cardTitle}>{eventItem.title}</h3>
                       {eventItem.title !== eventItem.description && <p className={styles.cardDesc}>{eventItem.description}</p>}
@@ -457,6 +471,7 @@ export default function Home() {
                           <span key={c} className={styles.badgeCountry}>{c}</span>
                         ))}
                         <span className={styles.cardYear}>{eventItem.year}년</span>
+                        {isSearchMode && <span className={styles.cardDate}>{Number(eventItem.date.split("-")[0])}월 {Number(eventItem.date.split("-")[1])}일</span>}
                       </div>
                       <h3 className={styles.cardTitle}>{eventItem.title}</h3>
                       {eventItem.title !== eventItem.description && <p className={styles.cardDesc}>{eventItem.description}</p>}

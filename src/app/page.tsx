@@ -30,6 +30,10 @@ function matchesCountry(country: string | string[], selected: string): boolean {
 export default function Home() {
   const [selectedCountry, setSelectedCountry] = useState("전체");
   const [searchQuery, setSearchQuery] = useState("");
+  // 검색 중 날짜를 명시적으로 선택/이동했는지 여부
+  // false → 전체 날짜 검색 결과 표시
+  // true  → selectedDate 기준으로 검색 결과 필터링
+  const [isDateLocked, setIsDateLocked] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");
   const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
   // 시스템 다크 모드 — useSyncExternalStore로 SSR-safe하게 구독
@@ -55,10 +59,23 @@ export default function Home() {
   const handleReset = () => {
     setSelectedCountry("전체");
     setSearchQuery("");
+    setIsDateLocked(false);
     setSelectedMonth(todayMonth);
     setSelectedDate(`${todayMonth}-${todayDate}`);
     setCategoryFilter("all");
     setSortOrder("asc");
+  };
+
+  // ─── 검색어 변경 — lock 해제 (다시 전체 검색 모드로) ───
+  const handleSearchChange = (q: string) => {
+    setSearchQuery(q);
+    setIsDateLocked(false);
+  };
+
+  // ─── 날짜 선택 — 검색 중이면 lock 설정 ───
+  const handleDateSelect = (date: string) => {
+    setSelectedDate(date);
+    if (searchQuery.trim()) setIsDateLocked(true);
   };
 
   // ─── 월 이동 ───
@@ -86,6 +103,7 @@ export default function Home() {
         const newDay = String(date.getDate()).padStart(2, "0");
         setSelectedDate(`${newMonth}-${newDay}`);
         setSelectedMonth(newMonth);
+        if (searchQuery.trim()) setIsDateLocked(true);
       } else if (e.key === "ArrowRight") {
         e.preventDefault();
         const [mm, dd] = selectedDate.split("-").map(Number);
@@ -95,6 +113,7 @@ export default function Home() {
         const newDay = String(date.getDate()).padStart(2, "0");
         setSelectedDate(`${newMonth}-${newDay}`);
         setSelectedMonth(newMonth);
+        if (searchQuery.trim()) setIsDateLocked(true);
       } else if (e.key === "[" || e.key === ",") {
         e.preventDefault();
         const monthIndex = Number(selectedMonth) - 1;
@@ -114,7 +133,7 @@ export default function Home() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedDate, selectedMonth, currentYear]);
+  }, [selectedDate, selectedMonth, currentYear, searchQuery]);
 
   // ─── 국가 목록 ───
   const countries = useMemo(() => {
@@ -194,12 +213,15 @@ export default function Home() {
   }, [selectedMonth, currentYear]);
 
   const isSearchMode = searchQuery.trim().length > 0;
+  // 전체 날짜 검색 모드: 검색어 있음 + 날짜 lock 없음
+  const showAllDates = isSearchMode && !isDateLocked;
 
   // ─── 이벤트 목록 ───
-  // 검색 중: 전체 날짜에서 매칭 결과 → 날짜순 정렬
-  // 일반: 선택 날짜 이벤트 → 연도순 정렬
+  // 모드 1. 기본           → selectedDate 기준
+  // 모드 2. 전체 검색      → 전체 날짜, 날짜순 정렬
+  // 모드 3. 날짜 고정 검색 → selectedDate 기준 (검색어 필터는 scopedEvents에서 이미 적용됨)
   const filteredEvents = useMemo(() => {
-    if (isSearchMode) {
+    if (showAllDates) {
       return [...categoryFilteredEvents].sort((a, b) => {
         if (a.date !== b.date) return a.date.localeCompare(b.date);
         return sortOrder === "asc" ? a.year - b.year : b.year - a.year;
@@ -208,7 +230,7 @@ export default function Home() {
     return categoryFilteredEvents
       .filter((event) => event.date === selectedDate)
       .sort((a, b) => sortOrder === "asc" ? a.year - b.year : b.year - a.year);
-  }, [categoryFilteredEvents, selectedDate, sortOrder, isSearchMode]);
+  }, [categoryFilteredEvents, selectedDate, sortOrder, showAllDates]);
 
   const selectedDay = Number(selectedDate.split("-")[1]);
 
@@ -270,10 +292,10 @@ export default function Home() {
               className={styles.searchInput}
               placeholder="사건 검색..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => handleSearchChange(e.target.value)}
             />
             {searchQuery && (
-              <button type="button" className={styles.searchClear} onClick={() => setSearchQuery("")} aria-label="검색 초기화">
+              <button type="button" className={styles.searchClear} onClick={() => handleSearchChange("")} aria-label="검색 초기화">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M18 6L6 18" />
                   <path d="M6 6l12 12" />
@@ -394,7 +416,7 @@ export default function Home() {
               const isSunday = index % 7 === 0;
 
               return (
-                <button key={dayKey} type="button" className={`${styles.dayButton} ${isSelected ? styles.selected : ""}`} onClick={() => setSelectedDate(dayKey)}>
+                <button key={dayKey} type="button" className={`${styles.dayButton} ${isSelected ? styles.selected : ""}`} onClick={() => handleDateSelect(dayKey)}>
                   <span className={`${styles.dayNumber} ${holidayCount > 0 || isSunday ? styles.holidayText : ""}`}>{day}</span>
                   <div className={styles.dotContainer}>
                     {historyCount > 0 && <span className={styles.dotHistory} />}
@@ -411,9 +433,11 @@ export default function Home() {
         <section className={styles.results}>
           <div className={styles.resultHeader}>
             <h2 className={styles.resultTitle}>
-              {isSearchMode
+              {showAllDates
                 ? <><span className={styles.searchQueryLabel}>&ldquo;{searchQuery}&rdquo;</span> 검색 결과</>
-                : <>{Number(selectedMonth)}월 {selectedDay}일의 역사</>
+                : isSearchMode
+                  ? <>{Number(selectedMonth)}월 {selectedDay}일 &middot; <span className={styles.searchQueryLabel}>&ldquo;{searchQuery}&rdquo;</span></>
+                  : <>{Number(selectedMonth)}월 {selectedDay}일의 역사</>
               }
             </h2>
             <div className={styles.resultMeta}>
@@ -458,7 +482,7 @@ export default function Home() {
                           <span key={c} className={styles.badgeCountry}>{c}</span>
                         ))}
                         <span className={styles.cardYear}>{eventItem.year}년</span>
-                        {isSearchMode && <span className={styles.cardDate}>{Number(eventItem.date.split("-")[0])}월 {Number(eventItem.date.split("-")[1])}일</span>}
+                        {showAllDates && <span className={styles.cardDate}>{Number(eventItem.date.split("-")[0])}월 {Number(eventItem.date.split("-")[1])}일</span>}
                       </div>
                       <h3 className={styles.cardTitle}>{eventItem.title}</h3>
                       {eventItem.title !== eventItem.description && <p className={styles.cardDesc}>{eventItem.description}</p>}
@@ -471,7 +495,7 @@ export default function Home() {
                           <span key={c} className={styles.badgeCountry}>{c}</span>
                         ))}
                         <span className={styles.cardYear}>{eventItem.year}년</span>
-                        {isSearchMode && <span className={styles.cardDate}>{Number(eventItem.date.split("-")[0])}월 {Number(eventItem.date.split("-")[1])}일</span>}
+                        {showAllDates && <span className={styles.cardDate}>{Number(eventItem.date.split("-")[0])}월 {Number(eventItem.date.split("-")[1])}일</span>}
                       </div>
                       <h3 className={styles.cardTitle}>{eventItem.title}</h3>
                       {eventItem.title !== eventItem.description && <p className={styles.cardDesc}>{eventItem.description}</p>}

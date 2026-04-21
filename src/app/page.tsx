@@ -49,6 +49,26 @@ export default function Home() {
 
   const [selectedMonth, setSelectedMonth] = useState(todayMonth);
   const [selectedDate, setSelectedDate] = useState(`${todayMonth}-${todayDate}`);
+  const restoredRef = useRef(false);
+
+  // hydration 후 sessionStorage에서 복원
+  useEffect(() => {
+    const savedMonth = sessionStorage.getItem("cal_month");
+    const savedDate = sessionStorage.getItem("cal_date");
+    if (savedMonth && savedDate) {
+      setSelectedMonth(savedMonth);
+      setSelectedDate(savedDate);
+    }
+    restoredRef.current = true;
+  }, []);
+
+  // 선택 날짜가 바뀔 때 sessionStorage에 저장 (복원 완료 후에만)
+  useEffect(() => {
+    if (restoredRef.current) {
+      sessionStorage.setItem("cal_month", selectedMonth);
+      sessionStorage.setItem("cal_date", selectedDate);
+    }
+  }, [selectedMonth, selectedDate]);
 
   // ─── 다크 모드: data-theme 속성 동기화 ───
   useEffect(() => {
@@ -227,9 +247,7 @@ export default function Home() {
         return sortOrder === "asc" ? a.year - b.year : b.year - a.year;
       });
     }
-    return categoryFilteredEvents
-      .filter((event) => event.date === selectedDate)
-      .sort((a, b) => sortOrder === "asc" ? a.year - b.year : b.year - a.year);
+    return categoryFilteredEvents.filter((event) => event.date === selectedDate).sort((a, b) => (sortOrder === "asc" ? a.year - b.year : b.year - a.year));
   }, [categoryFilteredEvents, selectedDate, sortOrder, showAllDates]);
 
   const selectedDay = Number(selectedDate.split("-")[1]);
@@ -237,19 +255,12 @@ export default function Home() {
   return (
     <div className={styles.page}>
       <main className={styles.main}>
-
         {/* ─── 헤더 ─── */}
         <section className={styles.header}>
           <div className={styles.titleRow}>
             <h1>역사 캘린더</h1>
             <div className={styles.titleActions}>
-              <button
-                type="button"
-                className={styles.darkToggle}
-                onClick={() => setManualDark(!darkMode)}
-                aria-label={darkMode ? "라이트 모드로 전환" : "다크 모드로 전환"}
-                title={darkMode ? "라이트 모드" : "다크 모드"}
-              >
+              <button type="button" className={styles.darkToggle} onClick={() => setManualDark(!darkMode)} aria-label={darkMode ? "라이트 모드로 전환" : "다크 모드로 전환"} title={darkMode ? "라이트 모드" : "다크 모드"}>
                 {darkMode ? (
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="12" cy="12" r="5" />
@@ -287,13 +298,7 @@ export default function Home() {
               <circle cx="11" cy="11" r="8" />
               <path d="M21 21l-4.35-4.35" />
             </svg>
-            <input
-              type="text"
-              className={styles.searchInput}
-              placeholder="사건 검색..."
-              value={searchQuery}
-              onChange={(e) => handleSearchChange(e.target.value)}
-            />
+            <input type="text" className={styles.searchInput} placeholder="사건 검색..." value={searchQuery} onChange={(e) => handleSearchChange(e.target.value)} />
             {searchQuery && (
               <button type="button" className={styles.searchClear} onClick={() => handleSearchChange("")} aria-label="검색 초기화">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -320,14 +325,7 @@ export default function Home() {
             </button>
             {countryOpen && (
               <div className={styles.comboDropdown}>
-                <input
-                  type="text"
-                  className={styles.comboSearch}
-                  placeholder="국가 검색..."
-                  value={countrySearch}
-                  onChange={(e) => setCountrySearch(e.target.value)}
-                  autoFocus
-                />
+                <input type="text" className={styles.comboSearch} placeholder="국가 검색..." value={countrySearch} onChange={(e) => setCountrySearch(e.target.value)} autoFocus />
                 <ul className={styles.comboList}>
                   {filteredCountries.length === 0 ? (
                     <li className={styles.comboEmpty}>결과 없음</li>
@@ -355,25 +353,13 @@ export default function Home() {
 
           {/* 카테고리 토글 */}
           <div className={styles.categoryToggle}>
-            <button
-              type="button"
-              className={`${styles.categoryButton} ${categoryFilter === "all" ? styles.categoryButtonActive : ""}`}
-              onClick={() => setCategoryFilter("all")}
-            >
+            <button type="button" className={`${styles.categoryButton} ${categoryFilter === "all" ? styles.categoryButtonActive : ""}`} onClick={() => setCategoryFilter("all")}>
               전체
             </button>
-            <button
-              type="button"
-              className={`${styles.categoryButton} ${categoryFilter === "history" ? styles.categoryButtonHistory : ""}`}
-              onClick={() => setCategoryFilter("history")}
-            >
+            <button type="button" className={`${styles.categoryButton} ${categoryFilter === "history" ? styles.categoryButtonHistory : ""}`} onClick={() => setCategoryFilter("history")}>
               역사
             </button>
-            <button
-              type="button"
-              className={`${styles.categoryButton} ${categoryFilter === "holiday" ? styles.categoryButtonHoliday : ""}`}
-              onClick={() => setCategoryFilter("holiday")}
-            >
+            <button type="button" className={`${styles.categoryButton} ${categoryFilter === "holiday" ? styles.categoryButtonHoliday : ""}`} onClick={() => setCategoryFilter("holiday")}>
               공휴일
             </button>
           </div>
@@ -387,7 +373,9 @@ export default function Home() {
                 <path d="M15 18l-6-6 6-6" />
               </svg>
             </button>
-            <h2 className={styles.monthTitle}>{currentYear}년 {Number(selectedMonth)}월</h2>
+            <h2 className={styles.monthTitle}>
+              {currentYear}년 {Number(selectedMonth)}월
+            </h2>
             <button type="button" onClick={() => handleMonthChange("next")} className={styles.navButton} aria-label="다음 달">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M9 18l6-6-6-6" />
@@ -433,21 +421,23 @@ export default function Home() {
         <section className={styles.results}>
           <div className={styles.resultHeader}>
             <h2 className={styles.resultTitle}>
-              {showAllDates
-                ? <><span className={styles.searchQueryLabel}>&ldquo;{searchQuery}&rdquo;</span> 검색 결과</>
-                : isSearchMode
-                  ? <>{Number(selectedMonth)}월 {selectedDay}일 &middot; <span className={styles.searchQueryLabel}>&ldquo;{searchQuery}&rdquo;</span></>
-                  : <>{Number(selectedMonth)}월 {selectedDay}일의 역사</>
-              }
+              {showAllDates ? (
+                <>
+                  <span className={styles.searchQueryLabel}>&ldquo;{searchQuery}&rdquo;</span> 검색 결과
+                </>
+              ) : isSearchMode ? (
+                <>
+                  {Number(selectedMonth)}월 {selectedDay}일 &middot; <span className={styles.searchQueryLabel}>&ldquo;{searchQuery}&rdquo;</span>
+                </>
+              ) : (
+                <>
+                  {Number(selectedMonth)}월 {selectedDay}일의 역사
+                </>
+              )}
             </h2>
             <div className={styles.resultMeta}>
               <span className={styles.resultCount}>{filteredEvents.length}건</span>
-              <button
-                type="button"
-                className={styles.sortButton}
-                onClick={() => setSortOrder((s) => (s === "asc" ? "desc" : "asc"))}
-                title={sortOrder === "asc" ? "오래된 순 정렬 중" : "최신 순 정렬 중"}
-              >
+              <button type="button" className={styles.sortButton} onClick={() => setSortOrder((s) => (s === "asc" ? "desc" : "asc"))} title={sortOrder === "asc" ? "오래된 순 정렬 중" : "최신 순 정렬 중"}>
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   {sortOrder === "asc" ? (
                     <>
@@ -475,14 +465,20 @@ export default function Home() {
               {filteredEvents.map((eventItem) => (
                 <li key={eventItem.id} className={styles.card}>
                   {eventItem.url ? (
-                    <a href={eventItem.url} target="_blank" rel="noopener noreferrer" className={styles.cardLink}>
+                    <a href={eventItem.url} rel="noopener noreferrer" className={styles.cardLink}>
                       <div className={styles.cardHeader}>
                         {eventItem.category === "holiday" ? <span className={styles.badgeHoliday}>공휴일</span> : <span className={styles.badgeHistory}>역사</span>}
                         {getCountries(eventItem.country).map((c) => (
-                          <span key={c} className={styles.badgeCountry}>{c}</span>
+                          <span key={c} className={styles.badgeCountry}>
+                            {c}
+                          </span>
                         ))}
                         <span className={styles.cardYear}>{eventItem.year}년</span>
-                        {showAllDates && <span className={styles.cardDate}>{Number(eventItem.date.split("-")[0])}월 {Number(eventItem.date.split("-")[1])}일</span>}
+                        {showAllDates && (
+                          <span className={styles.cardDate}>
+                            {Number(eventItem.date.split("-")[0])}월 {Number(eventItem.date.split("-")[1])}일
+                          </span>
+                        )}
                       </div>
                       <h3 className={styles.cardTitle}>{eventItem.title}</h3>
                       {eventItem.title !== eventItem.description && <p className={styles.cardDesc}>{eventItem.description}</p>}
@@ -492,10 +488,16 @@ export default function Home() {
                       <div className={styles.cardHeader}>
                         {eventItem.category === "holiday" ? <span className={styles.badgeHoliday}>공휴일</span> : <span className={styles.badgeHistory}>역사</span>}
                         {getCountries(eventItem.country).map((c) => (
-                          <span key={c} className={styles.badgeCountry}>{c}</span>
+                          <span key={c} className={styles.badgeCountry}>
+                            {c}
+                          </span>
                         ))}
                         <span className={styles.cardYear}>{eventItem.year}년</span>
-                        {showAllDates && <span className={styles.cardDate}>{Number(eventItem.date.split("-")[0])}월 {Number(eventItem.date.split("-")[1])}일</span>}
+                        {showAllDates && (
+                          <span className={styles.cardDate}>
+                            {Number(eventItem.date.split("-")[0])}월 {Number(eventItem.date.split("-")[1])}일
+                          </span>
+                        )}
                       </div>
                       <h3 className={styles.cardTitle}>{eventItem.title}</h3>
                       {eventItem.title !== eventItem.description && <p className={styles.cardDesc}>{eventItem.description}</p>}
@@ -506,7 +508,6 @@ export default function Home() {
             </ul>
           )}
         </section>
-
       </main>
     </div>
   );

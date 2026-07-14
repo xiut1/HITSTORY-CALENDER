@@ -1,45 +1,57 @@
+/* ───────────────────────────────────────────────
+   Apple design language (DESIGN-apple.md)
+   · 단일 액센트 Action Blue #0066cc
+   · Parchment/White 표면 · Ink #1d1d1f 텍스트
+   · 카테고리 색: 역사 Red / 공휴일 Green (PROJECT_BRIEF)
+   ─────────────────────────────────────────────── */
 :root {
-  --bg-base: #f7f8fa;
-  --bg-card: #fff;
-  --bg-muted: #f2f4f6;
-  --bg-active: #e8f3ff;
-  --text-primary: #191f28;
-  --text-secondary: #333d4b;
-  --text-tertiary: #6b7684;
-  --text-muted: #8b95a1;
-  --text-disabled: #b0b8c1;
-  --color-blue: #3182f6;
-  --color-blue-light: #e8f3ff;
-  --color-red: #e54e5b;
-  --color-red-light: #ffeef0;
-  --badge-country-bg: #f2f4f6;
-  --badge-country-text: #6b7684;
-  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.06);
-  --shadow-dropdown: 0 4px 20px rgba(0, 0, 0, 0.12);
-  --border-color: #e5e8eb;
-  --scrollbar-thumb: #d5dae0;
+  --bg-base: #f5f5f7;      /* Parchment */
+  --bg-card: #ffffff;      /* Canvas */
+  --bg-muted: #f0f0f0;     /* Divider-soft fill */
+  --bg-active: #eef4fc;    /* Action Blue 최소 틴트 */
+  --text-primary: #1d1d1f; /* Ink */
+  --text-secondary: #1d1d1f;
+  --text-tertiary: #6e6e73;
+  --text-muted: #86868b;
+  --text-disabled: #a1a1a6;
+  --color-blue: #0066cc;   /* Action Blue — 유일한 인터랙션 색 */
+  --color-blue-light: #eef4fc;
+  --color-red: #e63946;    /* 역사 (History) */
+  --color-red-light: #fff1f1;
+  --color-green: #2f855a;  /* 공휴일 (Holiday) */
+  --color-green-light: #f0fff4;
+  --badge-country-bg: #f5f5f7;
+  --badge-country-text: #1d1d1f;
+  --shadow-card: none;     /* chrome엔 그림자 없음 — 하드라인만 */
+  --shadow-dropdown: 0 8px 30px rgba(0, 0, 0, 0.12);
+  --border-color: #e0e0e0; /* Hairline */
+  --scrollbar-thumb: #d2d2d7;
+  --nav-bg: #000000;       /* Global nav — 순검정 */
 }
 
 [data-theme="dark"] {
-  --bg-base: #111827;
-  --bg-card: #1f2937;
-  --bg-muted: #2d3748;
+  --bg-base: #161617;
+  --bg-card: #1d1d1f;      /* Near-black tile */
+  --bg-muted: #2a2a2c;
   --bg-active: #1e3654;
-  --text-primary: #f9fafb;
-  --text-secondary: #e5e7eb;
-  --text-tertiary: #9ca3af;
-  --text-muted: #6b7280;
-  --text-disabled: #4b5563;
-  --color-blue: #60a5fa;
-  --color-blue-light: #1e3654;
-  --color-red: #f87171;
-  --color-red-light: #3b1a1e;
-  --badge-country-bg: #374151;
-  --badge-country-text: #9ca3af;
-  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.4);
-  --shadow-dropdown: 0 4px 20px rgba(0, 0, 0, 0.5);
-  --border-color: #374151;
-  --scrollbar-thumb: #4b5563;
+  --text-primary: #f5f5f7;
+  --text-secondary: #f5f5f7;
+  --text-tertiary: #a1a1a6;
+  --text-muted: #86868b;
+  --text-disabled: #6e6e73;
+  --color-blue: #2997ff;   /* Sky Link Blue — 다크 표면용 */
+  --color-blue-light: #14304d;
+  --color-red: #ff6b6b;
+  --color-red-light: #3a1d20;
+  --color-green: #4ade80;
+  --color-green-light: #17331f;
+  --badge-country-bg: #2a2a2c;
+  --badge-country-text: #d2d2d7;
+  --shadow-card: none;
+  --shadow-dropdown: 0 8px 30px rgba(0, 0, 0, 0.5);
+  --border-color: #38383a;
+  --scrollbar-thumb: #48484a;
+  --nav-bg: #000000;
 }
 
 * {
@@ -55,17 +67,17 @@ body {
   background-color: var(--bg-base);
   color: var(--text-primary);
   font-family:
-    "Pretendard",
     -apple-system,
     BlinkMacSystemFont,
     system-ui,
-    Roboto,
-    "Helvetica Neue",
-    "Segoe UI",
+    "SF Pro Text",
+    "SF Pro Display",
     "Apple SD Gothic Neo",
+    "Pretendard",
     "Noto Sans KR",
     "Malgun Gothic",
     sans-serif;
+  font-size: 17px; /* Apple 본문 기준: 16px 아닌 17px */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   transition: background-color 0.2s, color 0.2s;

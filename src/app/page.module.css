@@ -12,7 +12,7 @@
 
 /* ─── Header ─── */
 .header {
-  padding: 52px 24px 16px;
+  padding: 56px 24px 18px;
   background: var(--bg-card);
   transition: background-color 0.2s;
 }
@@ -21,15 +21,16 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 }
 
 .header h1 {
   margin: 0;
-  font-size: 22px;
-  font-weight: 700;
+  font-size: 28px;
+  font-weight: 600; /* Apple 헤드라인은 700 아닌 600 */
   color: var(--text-primary);
-  letter-spacing: -0.4px;
+  letter-spacing: -0.6px;
+  line-height: 1.1;
 }
 
 .titleActions {
@@ -39,17 +40,17 @@
 }
 
 .darkToggle {
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: none;
   border: none;
-  border-radius: 10px;
-  color: var(--text-muted);
+  border-radius: 9999px; /* Apple pill/circle */
+  color: var(--text-tertiary);
   cursor: pointer;
-  transition: background-color 0.15s, color 0.15s;
+  transition: transform 0.12s, background-color 0.15s, color 0.15s;
 }
 
 .darkToggle:hover {
@@ -57,36 +58,36 @@
 }
 
 .darkToggle:active {
-  background-color: var(--bg-active);
+  transform: scale(0.95); /* 시스템 전역 프레스 마이크로 인터랙션 */
   color: var(--color-blue);
 }
 
 .resetButton {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 6px 12px;
+  gap: 5px;
+  padding: 7px 14px;
   background: none;
   color: var(--color-blue);
   border: none;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 600;
+  border-radius: 9999px;
+  font-size: 14px;
+  font-weight: 400;
   cursor: pointer;
-  transition: background-color 0.15s;
-  letter-spacing: -0.2px;
+  transition: transform 0.12s;
+  letter-spacing: -0.224px;
 }
 
 .resetButton:active {
-  background-color: var(--bg-muted);
+  transform: scale(0.95);
 }
 
 .subtitle {
   margin: 0;
-  color: var(--text-muted);
-  font-size: 14px;
-  line-height: 1.5;
-  letter-spacing: -0.2px;
+  color: var(--text-tertiary);
+  font-size: 17px;
+  line-height: 1.47;
+  letter-spacing: -0.374px;
 }
 
 /* ─── Filters ─── */
@@ -107,22 +108,23 @@
 
 .searchIcon {
   position: absolute;
-  left: 12px;
+  left: 16px;
   pointer-events: none;
 }
 
 .searchInput {
   width: 100%;
-  padding: 10px 36px 10px 36px;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-secondary);
-  background-color: var(--bg-muted);
-  border: none;
-  border-radius: 10px;
+  height: 44px;
+  padding: 0 40px 0 40px;
+  font-size: 17px;
+  font-weight: 400;
+  color: var(--text-primary);
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 9999px; /* 검색도 pill — CTA 문법과 일치 */
   outline: none;
-  letter-spacing: -0.2px;
-  transition: background-color 0.15s;
+  letter-spacing: -0.374px;
+  transition: border-color 0.15s, box-shadow 0.15s;
   box-sizing: border-box;
 }
 
@@ -131,12 +133,13 @@
 }
 
 .searchInput:focus {
-  background-color: var(--bg-active);
+  border-color: var(--color-blue);
+  box-shadow: 0 0 0 3px var(--color-blue-light);
 }
 
 .searchClear {
   position: absolute;
-  right: 8px;
+  right: 10px;
   width: 28px;
   height: 28px;
   display: flex;
@@ -160,16 +163,17 @@
 
 .comboButton {
   width: 100%;
-  padding: 10px 14px 10px 14px;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-secondary);
-  background-color: var(--bg-muted);
-  border: none;
-  border-radius: 10px;
+  height: 44px;
+  padding: 0 18px;
+  font-size: 17px;
+  font-weight: 400;
+  color: var(--text-primary);
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 9999px;
   cursor: pointer;
-  transition: background-color 0.15s;
-  letter-spacing: -0.2px;
+  transition: transform 0.12s, border-color 0.15s;
+  letter-spacing: -0.374px;
   text-align: left;
   display: flex;
   align-items: center;
@@ -177,16 +181,17 @@
 }
 
 .comboButton:active {
-  background-color: var(--bg-active);
+  transform: scale(0.98);
+  border-color: var(--color-blue);
 }
 
 .comboDropdown {
   position: absolute;
-  top: calc(100% + 6px);
+  top: calc(100% + 8px);
   left: 0;
   right: 0;
   background: var(--bg-card);
-  border-radius: 12px;
+  border-radius: 18px;
   box-shadow: var(--shadow-dropdown);
   z-index: 100;
   overflow: hidden;
@@ -229,16 +234,16 @@
 
 .comboOption {
   width: 100%;
-  padding: 10px 12px;
-  font-size: 14px;
-  font-weight: 500;
+  padding: 11px 14px;
+  font-size: 15px;
+  font-weight: 400;
   color: var(--text-secondary);
   background: none;
   border: none;
-  border-radius: 8px;
+  border-radius: 11px;
   cursor: pointer;
   text-align: left;
-  letter-spacing: -0.2px;
+  letter-spacing: -0.3px;
   transition: background-color 0.1s;
 }
 
@@ -259,44 +264,50 @@
   text-align: center;
 }
 
-/* ─── Category Toggle ─── */
+/* ─── Category Toggle (iOS 세그먼트 컨트롤) ─── */
 .categoryToggle {
   display: flex;
-  gap: 6px;
+  gap: 4px;
+  background: var(--bg-muted);
+  border-radius: 9999px;
+  padding: 3px;
 }
 
 .categoryButton {
   flex: 1;
-  padding: 9px 0;
-  font-size: 13px;
+  padding: 8px 0;
+  font-size: 14px;
   font-weight: 600;
-  color: var(--text-muted);
-  background: var(--bg-muted);
+  color: var(--text-tertiary);
+  background: none;
   border: none;
-  border-radius: 10px;
+  border-radius: 9999px;
   cursor: pointer;
-  transition: background-color 0.15s, color 0.15s;
-  letter-spacing: -0.2px;
+  transition: color 0.15s, box-shadow 0.15s, background-color 0.15s;
+  letter-spacing: -0.224px;
 }
 
 .categoryButton:hover {
-  background: var(--bg-active);
-  color: var(--color-blue);
+  color: var(--text-primary);
 }
 
+/* 활성 세그먼트: 흰 pill이 떠오르는 iOS 방식 */
 .categoryButtonActive {
-  background: var(--bg-active) !important;
-  color: var(--color-blue) !important;
+  background: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .categoryButtonHistory {
-  background: var(--color-blue-light) !important;
-  color: var(--color-blue) !important;
+  background: var(--bg-card) !important;
+  color: var(--color-red) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .categoryButtonHoliday {
-  background: var(--color-red-light) !important;
-  color: var(--color-red) !important;
+  background: var(--bg-card) !important;
+  color: var(--color-green) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 /* ─── Calendar ─── */
@@ -317,29 +328,30 @@
 
 .monthTitle {
   margin: 0;
-  font-size: 18px;
-  font-weight: 700;
+  font-size: 21px;
+  font-weight: 600;
   color: var(--text-primary);
-  min-width: 56px;
+  min-width: 96px;
   text-align: center;
-  letter-spacing: -0.3px;
+  letter-spacing: -0.4px;
 }
 
 .navButton {
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   border: none;
-  background: none;
-  border-radius: 10px;
+  background: var(--bg-base);
+  border-radius: 9999px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-muted);
+  color: var(--text-primary);
   cursor: pointer;
-  transition: background-color 0.15s;
+  transition: transform 0.12s, background-color 0.15s;
 }
 
 .navButton:active {
+  transform: scale(0.92);
   background-color: var(--bg-muted);
 }
 
@@ -439,17 +451,17 @@
 }
 
 .dotHistory {
-  width: 4px;
-  height: 4px;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
-  background-color: var(--color-blue);
+  background-color: var(--color-red); /* 역사 = Red */
 }
 
 .dotHoliday {
-  width: 4px;
-  height: 4px;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
-  background-color: var(--color-red);
+  background-color: var(--color-green); /* 공휴일 = Green */
 }
 
 /* ─── Results ─── */
@@ -465,66 +477,62 @@
 }
 
 .resultTitle {
-  font-size: 17px;
-  font-weight: 700;
+  font-size: 22px;
+  font-weight: 600;
   color: var(--text-primary);
-  letter-spacing: -0.3px;
+  letter-spacing: -0.5px;
   margin: 0;
 }
 
 .resultMeta {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 10px;
   flex-shrink: 0;
 }
 
 .resultCount {
-  color: var(--text-disabled);
-  font-weight: 500;
+  color: var(--text-tertiary);
+  font-weight: 400;
   font-size: 14px;
+  letter-spacing: -0.224px;
 }
 
 .sortButton {
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 5px 10px;
-  background: var(--bg-muted);
-  color: var(--text-tertiary);
+  padding: 6px 4px;
+  background: none;
+  color: var(--color-blue);
   border: none;
-  border-radius: 8px;
-  font-size: 12px;
-  font-weight: 600;
+  border-radius: 9999px;
+  font-size: 14px;
+  font-weight: 400;
   cursor: pointer;
-  transition: background-color 0.15s, color 0.15s;
-  letter-spacing: -0.2px;
+  transition: transform 0.12s;
+  letter-spacing: -0.224px;
   white-space: nowrap;
 }
 
-.sortButton:hover {
-  background-color: var(--bg-active);
-  color: var(--color-blue);
-}
-
 .sortButton:active {
-  background-color: var(--bg-active);
-  color: var(--color-blue);
+  transform: scale(0.95);
 }
 
 .emptyState {
   text-align: center;
-  padding: 52px 20px;
+  padding: 56px 20px;
   background: var(--bg-card);
-  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 18px;
   transition: background-color 0.2s;
 }
 
 .emptyState p {
-  color: var(--text-disabled);
-  font-size: 14px;
-  font-weight: 500;
-  letter-spacing: -0.2px;
+  color: var(--text-tertiary);
+  font-size: 17px;
+  font-weight: 400;
+  letter-spacing: -0.374px;
 }
 
 .eventList {
@@ -539,21 +547,22 @@
 /* ─── Cards ─── */
 .card {
   background: var(--bg-card);
-  border-radius: 16px;
-  box-shadow: var(--shadow-card);
+  border-radius: 18px; /* store-utility-card */
+  border: 1px solid var(--border-color); /* 하드라인 — chrome엔 그림자 없음 */
   overflow: hidden;
-  transition: transform 0.12s, background-color 0.2s;
+  transition: transform 0.12s, border-color 0.15s, background-color 0.2s;
 }
 
 .card:active {
   transform: scale(0.98);
+  border-color: var(--color-blue);
 }
 
 .cardLink {
   text-decoration: none;
   color: inherit;
   display: block;
-  padding: 18px;
+  padding: 20px;
 }
 
 .cardContent {
@@ -569,51 +578,51 @@
 }
 
 .badgeHistory {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--color-blue);
-  background-color: var(--color-blue-light);
-  padding: 3px 8px;
-  border-radius: 4px;
-  letter-spacing: -0.2px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-red); /* 역사 = Red */
+  background-color: var(--color-red-light);
+  padding: 3px 10px;
+  border-radius: 9999px; /* pill 문법 */
+  letter-spacing: -0.12px;
 }
 
 .badgeHoliday {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--color-red);
-  background-color: var(--color-red-light);
-  padding: 3px 8px;
-  border-radius: 4px;
-  letter-spacing: -0.2px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-green); /* 공휴일 = Green */
+  background-color: var(--color-green-light);
+  padding: 3px 10px;
+  border-radius: 9999px;
+  letter-spacing: -0.12px;
 }
 
 .badgeCountry {
-  font-size: 11px;
-  font-weight: 700;
+  font-size: 12px;
+  font-weight: 600;
   color: var(--badge-country-text);
   background-color: var(--badge-country-bg);
-  padding: 3px 8px;
-  border-radius: 4px;
-  letter-spacing: -0.2px;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  letter-spacing: -0.12px;
 }
 
 .cardYear {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--text-disabled);
-  letter-spacing: -0.2px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  letter-spacing: -0.224px;
+  margin-left: auto;
 }
 
 .cardDate {
-  margin-left: auto;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--text-muted);
-  background: var(--bg-muted);
-  padding: 2px 7px;
-  border-radius: 4px;
-  letter-spacing: -0.2px;
+  background: var(--bg-base);
+  padding: 3px 9px;
+  border-radius: 9999px;
+  letter-spacing: -0.12px;
   white-space: nowrap;
 }
 
@@ -623,20 +632,20 @@
 
 .cardTitle {
   margin: 0;
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 600;
   color: var(--text-primary);
-  line-height: 1.45;
-  letter-spacing: -0.3px;
+  line-height: 1.3;
+  letter-spacing: -0.374px;
   word-break: keep-all;
 }
 
 .cardDesc {
-  margin: 6px 0 0;
-  font-size: 14px;
+  margin: 7px 0 0;
+  font-size: 15px;
   color: var(--text-tertiary);
-  line-height: 1.65;
-  letter-spacing: -0.2px;
+  line-height: 1.5;
+  letter-spacing: -0.24px;
   word-break: keep-all;
 }
 

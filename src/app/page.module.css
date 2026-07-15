@@ -266,14 +266,31 @@
 
 /* ─── Category Toggle (iOS 세그먼트 컨트롤) ─── */
 .categoryToggle {
+  position: relative;
   display: flex;
-  gap: 4px;
   background: var(--bg-muted);
   border-radius: 9999px;
   padding: 3px;
 }
 
+/* 활성 세그먼트를 따라 슬라이드하는 흰 pill */
+.segIndicator {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 3px;
+  width: calc((100% - 6px) / 3);
+  border-radius: 9999px;
+  background: var(--bg-card);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  transition: transform 0.34s cubic-bezier(0.22, 1, 0.36, 1);
+  z-index: 0;
+  pointer-events: none;
+}
+
 .categoryButton {
+  position: relative;
+  z-index: 1;
   flex: 1;
   padding: 8px 0;
   font-size: 14px;
@@ -283,7 +300,7 @@
   border: none;
   border-radius: 9999px;
   cursor: pointer;
-  transition: color 0.15s, box-shadow 0.15s, background-color 0.15s;
+  transition: color 0.22s ease;
   letter-spacing: -0.224px;
 }
 
@@ -291,23 +308,17 @@
   color: var(--text-primary);
 }
 
-/* 활성 세그먼트: 흰 pill이 떠오르는 iOS 방식 */
+/* 활성 텍스트 색 — 배경 pill은 .segIndicator가 담당 */
 .categoryButtonActive {
-  background: var(--bg-card) !important;
   color: var(--text-primary) !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .categoryButtonHistory {
-  background: var(--bg-card) !important;
   color: var(--color-red) !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .categoryButtonHoliday {
-  background: var(--bg-card) !important;
   color: var(--color-green) !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 /* ─── Calendar ─── */
@@ -383,6 +394,47 @@
   grid-template-columns: repeat(7, 1fr);
   gap: 2px;
   padding: 0 2px;
+}
+
+/* 월 이동 시 방향에 따라 슬라이드 + 페이드 인 */
+.calendarGrid[data-dir="next"] {
+  animation: gridSlideNext 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.calendarGrid[data-dir="prev"] {
+  animation: gridSlidePrev 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes gridSlideNext {
+  from {
+    opacity: 0;
+    transform: translateX(22px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes gridSlidePrev {
+  from {
+    opacity: 0;
+    transform: translateX(-22px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .segIndicator {
+    transition: none;
+  }
+  .calendarGrid[data-dir="next"],
+  .calendarGrid[data-dir="prev"] {
+    animation: none;
+  }
 }
 
 .emptyCell {

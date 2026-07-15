@@ -36,6 +36,8 @@ export default function Home() {
   const [isDateLocked, setIsDateLocked] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");
   const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
+  // 달력 월 이동 애니메이션 방향
+  const [slideDir, setSlideDir] = useState<"prev" | "next">("next");
   // 시스템 다크 모드 — useSyncExternalStore로 SSR-safe하게 구독
   const systemDark = useSyncExternalStore(subscribeToColorScheme, getSystemDark, getServerDark);
   // 수동 토글 override (null = 시스템 설정 따름)
@@ -47,28 +49,9 @@ export default function Home() {
   const todayMonth = String(today.getMonth() + 1).padStart(2, "0");
   const todayDate = String(today.getDate()).padStart(2, "0");
 
+  // 첫 진입/새로고침 시 항상 오늘 날짜가 기본 선택되도록 유지 (세션 복원 없음)
   const [selectedMonth, setSelectedMonth] = useState(todayMonth);
   const [selectedDate, setSelectedDate] = useState(`${todayMonth}-${todayDate}`);
-  const restoredRef = useRef(false);
-
-  // hydration 후 sessionStorage에서 복원
-  useEffect(() => {
-    const savedMonth = sessionStorage.getItem("cal_month");
-    const savedDate = sessionStorage.getItem("cal_date");
-    if (savedMonth && savedDate) {
-      setSelectedMonth(savedMonth);
-      setSelectedDate(savedDate);
-    }
-    restoredRef.current = true;
-  }, []);
-
-  // 선택 날짜가 바뀔 때 sessionStorage에 저장 (복원 완료 후에만)
-  useEffect(() => {
-    if (restoredRef.current) {
-      sessionStorage.setItem("cal_month", selectedMonth);
-      sessionStorage.setItem("cal_date", selectedDate);
-    }
-  }, [selectedMonth, selectedDate]);
 
   // ─── 다크 모드: data-theme 속성 동기화 ───
   useEffect(() => {
@@ -100,6 +83,7 @@ export default function Home() {
 
   // ─── 월 이동 ───
   const handleMonthChange = (direction: "prev" | "next") => {
+    setSlideDir(direction);
     const currentMonthIndex = Number(selectedMonth) - 1;
     const newDate = new Date(currentYear, currentMonthIndex + (direction === "next" ? 1 : -1), 1);
     const newMonth = String(newDate.getMonth() + 1).padStart(2, "0");
@@ -116,6 +100,7 @@ export default function Home() {
 
       if (e.key === "ArrowLeft") {
         e.preventDefault();
+        setSlideDir("prev");
         const [mm, dd] = selectedDate.split("-").map(Number);
         const date = new Date(currentYear, mm - 1, dd);
         date.setDate(date.getDate() - 1);
@@ -126,6 +111,7 @@ export default function Home() {
         if (searchQuery.trim()) setIsDateLocked(true);
       } else if (e.key === "ArrowRight") {
         e.preventDefault();
+        setSlideDir("next");
         const [mm, dd] = selectedDate.split("-").map(Number);
         const date = new Date(currentYear, mm - 1, dd);
         date.setDate(date.getDate() + 1);
@@ -136,6 +122,7 @@ export default function Home() {
         if (searchQuery.trim()) setIsDateLocked(true);
       } else if (e.key === "[" || e.key === ",") {
         e.preventDefault();
+        setSlideDir("prev");
         const monthIndex = Number(selectedMonth) - 1;
         const prevDate = new Date(currentYear, monthIndex - 1, 1);
         const newMonth = String(prevDate.getMonth() + 1).padStart(2, "0");
@@ -143,6 +130,7 @@ export default function Home() {
         setSelectedDate(`${newMonth}-01`);
       } else if (e.key === "]" || e.key === ".") {
         e.preventDefault();
+        setSlideDir("next");
         const monthIndex = Number(selectedMonth) - 1;
         const nextDate = new Date(currentYear, monthIndex + 1, 1);
         const newMonth = String(nextDate.getMonth() + 1).padStart(2, "0");
@@ -353,6 +341,7 @@ export default function Home() {
 
           {/* 카테고리 토글 */}
           <div className={styles.categoryToggle}>
+            <span className={styles.segIndicator} data-active={categoryFilter} style={{ transform: `translateX(${categoryFilter === "all" ? 0 : categoryFilter === "history" ? 100 : 200}%)` }} />
             <button type="button" className={`${styles.categoryButton} ${categoryFilter === "all" ? styles.categoryButtonActive : ""}`} onClick={() => setCategoryFilter("all")}>
               전체
             </button>
@@ -389,7 +378,7 @@ export default function Home() {
               </span>
             ))}
           </div>
-          <div className={styles.calendarGrid}>
+          <div className={styles.calendarGrid} key={selectedMonth} data-dir={slideDir}>
             {monthData.map((day, index) => {
               if (day === null) {
                 return <div key={`empty-${index}`} className={styles.emptyCell} />;
